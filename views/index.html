@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDFKit Live Preview</title>
+  <style>
+    iframe {
+      width: 100%;
+      height: 100vh;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <iframe id="pdfFrame" src="/output.pdf"></iframe>
+
+  <script>
+    const pdfFrame = document.getElementById('pdfFrame');
+    const ws = new WebSocket('ws://localhost:3001');
+
+    ws.onmessage = (message) => {
+      if (message.data === 'reload') {
+        // Create a new object URL to force the iframe to reload the PDF
+        fetch('/generate-pdf', { cache: 'no-store' })
+          .then(response => response.blob())
+          .then(blob => {
+            const pdfUrl = URL.createObjectURL(blob);
+            pdfFrame.src = pdfUrl;
+          })
+          .catch(error => console.error('Error fetching PDF:', error));
+      } else if (message.data === 'error') {
+        console.error('Error regenerating PDF on the server');
+        alert('Error regenerating PDF. Check the server logs for details.');
+      }
+    };
+
+    ws.onopen = () => {
+      console.log('WebSocket connection established');
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+  </script>
+</body>
+</html>
